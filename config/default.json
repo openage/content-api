@@ -1,0 +1,45 @@
+{
+    "dbServer": {
+        "database": "content",
+        "host": "mongodb://localhost:27017/oa_content"
+    },
+    "webServer": {
+        "url": "http://localhost:3006",
+        "port": 3006
+    },
+    "queueServer": {
+        "disabled": true
+    },
+    "system": {
+        "name": "Open Age",
+        "emailId": "no_reply@openage.in"
+    },
+    "auth": {
+        "provider": "directory"
+    },
+    "storage": {
+        "provider": "drive"
+    },
+    "message": {
+        "provider": "send-it"
+    },
+    "logger": {
+        "console": {
+            "level": "silly",
+            "handleExceptions": true,
+            "json": false,
+            "colorize": true
+        }
+    },
+    "providers": {
+        "directory": {
+            "url": "http://localhost:3001/api"
+        },
+        "send-it": {
+            "url": "http://localhost:3002/api"
+        },
+        "drive": {
+            "url": "http://localhost:3003/api"
+        }
+    }
+}

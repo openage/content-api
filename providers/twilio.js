@@ -1,11 +1,11 @@
 'use strict';
-var logger = require('../helpers/logger')('providers.twilio');
+var logger = require('@open-age/logger')('providers.twilio');
 var smsConfig = require('config').get('sms');
 
 var twilio = require('twilio')(smsConfig.id, smsConfig.token);
 
 
-exports.send = function(to, data, cb) {
+exports.send = function (to, data, cb) {
     var log = logger.start('send');
     var sms = {
         to: to,

@@ -1,7 +1,7 @@
 "use strict";
 var async = require('async');
 var db = require('mongoose').models;
-var mapper = require('../mappers/profile');
+var mapper = require('../mappers/user');
 var entitiesHelper = require('../helpers/entities');
 var _ = require('underscore');
 var profile = require('../api/activities');
@@ -11,7 +11,7 @@ var notifyUpdation = require('../helpers/notifyUpdations');
 var notificationService = require('../services/notification');
 var dbQuery = require('../helpers/dbQuery');
 
-var where = function(req) {
+var where = function (req) {
     var query = {};
     var pageSize = query.pageSize || 10;
     var pageNo = query.pageNo || 1;
@@ -101,7 +101,7 @@ var where = function(req) {
     return { $or: queryArray };
 };
 
-var notify = function(hisProfile, recipientModel, requestingProfile, hasChanged, action, cb) {
+var notify = function (hisProfile, recipientModel, requestingProfile, hasChanged, action, cb) {
     if (hasChanged) {
         notificationService.notify(hisProfile, {
             entity: {
@@ -112,7 +112,7 @@ var notify = function(hisProfile, recipientModel, requestingProfile, hasChanged,
             },
             api: 'profile/recipient',
             action: action
-        }, function() {
+        }, function () {
             cb(null);
         });
     } else {
@@ -120,10 +120,10 @@ var notify = function(hisProfile, recipientModel, requestingProfile, hasChanged,
     }
 };
 
-var getProfile = function(profile, cb) {
+var getProfile = function (profile, cb) {
     db.profile.findOne({
         _id: profile
-    }, function(err, profileModel) {
+    }, function (err, profileModel) {
         if (err) {
             return cb(err);
         }
@@ -132,7 +132,7 @@ var getProfile = function(profile, cb) {
     });
 };
 
-exports.invite = function(req, res) {
+exports.invite = function (req, res) {
 
     var data = req.body;
 
@@ -151,7 +151,7 @@ exports.invite = function(req, res) {
     }
 
     if (data.phones) {
-        _(data.phones).each(function(item) {
+        _(data.phones).each(function (item) {
             invitations.push({
                 phone: item
             });
@@ -159,78 +159,78 @@ exports.invite = function(req, res) {
     }
 
     if (data.facebookIds) {
-        _(data.facebookIds).each(function(item) {
+        _(data.facebookIds).each(function (item) {
             invitations.push({
                 facebookId: item
             });
         });
     }
 
-    async.each(invitations, function(invitee, cb) {
-            async.waterfall([function(cb) {
-                    db.user.findOne({
-                        phone: invitee.phone
-                    }, cb);
-                },
-                function(user, cb) {
-                    if (user) {
-                        return cb('user exists');
-                    }
-
-                    (new db.user({
-                        status: 'invited',
-                        phone: invitee.phone,
-                        facebookId: invitee.facebookId
-                    }))
-                    .save(function(err, item) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        cb(null, item);
-                    });
-                },
-                function(user, cb) {
-                    (new db.profile({
-                        user: user,
-                        status: 'invited',
-                        invitedBy: req.profile
-                    }))
-                    .save(function(err, profile) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        cb(null, profile, user);
-                    });
-                },
-                function(profile, user, cb) {
-                    user.profile = profile;
-                    user.save(function(err, item) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        cb(null, profile);
-                    });
-                }
-            ], function(err) {
-                if (err === 'user exists') {
-                    cb(null); // continue to create other users,
-                } else {
-                    cb(err);
-                }
-            });
+    async.each(invitations, function (invitee, cb) {
+        async.waterfall([function (cb) {
+            db.user.findOne({
+                phone: invitee.phone
+            }, cb);
         },
-        function(err) {
+        function (user, cb) {
+            if (user) {
+                return cb('user exists');
+            }
+
+            (new db.user({
+                status: 'invited',
+                phone: invitee.phone,
+                facebookId: invitee.facebookId
+            }))
+                .save(function (err, item) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(null, item);
+                });
+        },
+        function (user, cb) {
+            (new db.profile({
+                user: user,
+                status: 'invited',
+                invitedBy: req.profile
+            }))
+                .save(function (err, profile) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(null, profile, user);
+                });
+        },
+        function (profile, user, cb) {
+            user.profile = profile;
+            user.save(function (err, item) {
+                if (err) {
+                    return cb(err);
+                }
+                cb(null, profile);
+            });
+        }
+        ], function (err) {
+            if (err === 'user exists') {
+                cb(null); // continue to create other users,
+            } else {
+                cb(err);
+            }
+        });
+    },
+        function (err) {
             if (err) {
                 return res.failure(err);
             }
             return res.success();
         });
 };
-var userType = function(model, profile, callback) {
+var userType = function (model, profile, callback) {
     if (model.batch) {
         db.community.findOne({
             _id: model.batch.id
-        }).exec(function(err, community) {
+        }).exec(function (err, community) {
             if (err) {
                 return callback(err);
             }
@@ -240,7 +240,7 @@ var userType = function(model, profile, callback) {
                 profile: profile.id,
                 date: new Date()
             });
-            community.save(function(err, community) {
+            community.save(function (err, community) {
                 if (err) {
                     return callback(err);
                 }
@@ -253,7 +253,7 @@ var userType = function(model, profile, callback) {
     } else {
         db.community.findOne({
             subject: "Staff Room"
-        }).exec(function(err, community) {
+        }).exec(function (err, community) {
             if (err) {
                 return callback(err);
             }
@@ -263,7 +263,7 @@ var userType = function(model, profile, callback) {
                 profile: profile.id,
                 date: new Date()
             });
-            community.save(function(err, community) {
+            community.save(function (err, community) {
                 if (err) {
                     return callback(err);
                 }
@@ -276,43 +276,43 @@ var userType = function(model, profile, callback) {
 
 };
 // can update only my profile
-exports.update = function(req, res) {
+exports.update = function (req, res) {
     var model = req.body;
     var profile = req.profile;
 
     if (model.interests) {
-        if (typeof(model.interests[0]) === "object") {
+        if (typeof (model.interests[0]) === "object") {
             model.interests = _.pluck(model.interests, 'id');
         }
     }
     if (model.tags) {
 
-        if (typeof(model.tags[0]) === "object") {
+        if (typeof (model.tags[0]) === "object") {
             model.tags = _.pluck(model.tags, 'id');
         }
     }
     async.waterfall([
-        function(cb) {
+        function (cb) {
             if (model.name && model.name !== profile.name) {
                 chatClient.updateUser(profile.chat.id, {
                     full_name: req.body.name
-                }, function(err) {
+                }, function (err) {
                     cb(err, profile);
                 });
             } else {
                 cb(null, profile);
             }
         },
-        function(profile, cb) {
+        function (profile, cb) {
             if (!model.employeeNo) {
                 return cb(null, profile);
 
             }
 
             db.profile.findOne({
-                    employeeNo: model.employeeNo
-                })
-                .exec(function(err, result) {
+                employeeNo: model.employeeNo
+            })
+                .exec(function (err, result) {
                     if (err) {
                         return res.failure(err);
                     }
@@ -323,9 +323,9 @@ exports.update = function(req, res) {
                 });
 
         },
-        function(user, cb) {
+        function (user, cb) {
             if (model.employeeNo || model.batch) {
-                userType(model, profile, function(err, user) {
+                userType(model, profile, function (err, user) {
                     if (err) {
                         return res.failure(err);
                     }
@@ -337,7 +337,7 @@ exports.update = function(req, res) {
             }
 
         },
-        function(profile, cb) {
+        function (profile, cb) {
             profile = entitiesHelper(profile).set(model, [
                 'name',
                 'picUrl',
@@ -357,19 +357,19 @@ exports.update = function(req, res) {
                 'location',
                 'status'
             ]);
-            profile.save(function(err, profile) {
+            profile.save(function (err, profile) {
                 if (err) {
                     return cb(err);
                 }
                 cb(null);
             });
         },
-        function(cb) {
+        function (cb) {
             db.profile.findOne({
-                    _id: profile._id
-                })
+                _id: profile._id
+            })
                 .populate('recipients interests tags defaultCommunity')
-                .exec(function(err, updatedProfile) {
+                .exec(function (err, updatedProfile) {
                     if (err) {
                         return cb(err);
                     }
@@ -377,7 +377,7 @@ exports.update = function(req, res) {
                 });
         }
 
-    ], function(err, profile) {
+    ], function (err, profile) {
         if (err) {
             return res.failure(err);
         }
@@ -410,7 +410,7 @@ exports.update = function(req, res) {
     });
 };
 
-exports.get = function(req, res) {
+exports.get = function (req, res) {
 
     var myProfile = false;
     var query = {};
@@ -422,7 +422,7 @@ exports.get = function(req, res) {
         query._id = req.params.id;
     }
 
-    async.waterfall([function(cb) {
+    async.waterfall([function (cb) {
         var dbQuery = db.profile.findOne(query);
 
         if (myProfile) {
@@ -441,9 +441,9 @@ exports.get = function(req, res) {
                 });
         } else {
             dbQuery.populate({
-                    path: 'interests tags connections',
-                    select: 'name'
-                })
+                path: 'interests tags connections',
+                select: 'name'
+            })
                 .populate({
                     path: 'user',
                     select: 'phone chat status'
@@ -451,7 +451,7 @@ exports.get = function(req, res) {
         }
         // dbQuery.populate('recipients connections');
         dbQuery.exec(cb);
-    }], function(err, profile) {
+    }], function (err, profile) {
         if (!profile) {
             return res.failure('profile does not exist');
         }
@@ -462,9 +462,9 @@ exports.get = function(req, res) {
             profile.defaultCommunity = profile.defaultCommunity.id;
             return res.data(mapper.toMyProfileModel(profile));
         }
-        if (_(profile.loops).find(function(loop) {
-                return loop.profile.id === req.profile.id;
-            })) {
+        if (_(profile.loops).find(function (loop) {
+            return loop.profile.id === req.profile.id;
+        })) {
             return res.data(mapper.toRecipientModel(profile));
         }
         if (profile.status === "inComplete") {
@@ -475,26 +475,26 @@ exports.get = function(req, res) {
 };
 
 // only active and 
-exports.search = function(req, res) {
+exports.search = function (req, res) {
 
 
     var filter = db.profile.find(where(req));
     filter
-    // .populate('interests tags')
-        .exec(function(err, profiles) {
-        if (err) {
-            return res.failure(err);
-        }
-        if (req.query.isPublic === 'true') {
-            return res.page(mapper.discoverPublicProfiles(profiles));
-        }
-        res.page(mapper.toSearchModel(profiles));
-    });
+        // .populate('interests tags')
+        .exec(function (err, profiles) {
+            if (err) {
+                return res.failure(err);
+            }
+            if (req.query.isPublic === 'true') {
+                return res.page(mapper.discoverPublicProfiles(profiles));
+            }
+            res.page(mapper.toSearchModel(profiles));
+        });
 
 
 };
 
-exports.getMyWaiters = function(req, res) {
+exports.getMyWaiters = function (req, res) {
 
     var profile = req.profile;
 
@@ -514,35 +514,35 @@ exports.getMyWaiters = function(req, res) {
 
     db.community.find(query).select('members.profile members.status')
         .populate({ path: 'members.profile', select: 'name picData picUrl about defaultCommunity' })
-        .then(function(communities) {
+        .then(function (communities) {
 
             return communities;
         })
-        .then(function(communities) {
+        .then(function (communities) {
             if (_.isEmpty(communities)) {
                 return communities;
             }
             var profileIds = [];
-            _.each(communities, function(community) {
-                profileIds.push(_.filter(community.members, function(member) {
+            _.each(communities, function (community) {
+                profileIds.push(_.filter(community.members, function (member) {
                     return member.profile && member.status === 'waiting';
                 }));
             });
             return _.pluck(_.flatten(profileIds), 'profile');
 
-        }).then(function(profileModels) {
+        }).then(function (profileModels) {
 
             res.page(mapper.discoverPublicProfiles(profileModels));
-        }).catch(function(err) {
+        }).catch(function (err) {
             res.failure(err);
         });
 
 };
 
-exports.notify = function(req, res) {
+exports.notify = function (req, res) {
     db.profile.findOne({
         _id: req.params.id
-    }, function(err, profile) {
+    }, function (err, profile) {
         if (err) {
             return res.failure(err);
         }
@@ -560,7 +560,7 @@ exports.notify = function(req, res) {
 
             message: req.body.message,
             subject: req.body.subject
-        }, function(err) {
+        }, function (err) {
             if (err) {
                 return res.failure(err);
             }
@@ -570,92 +570,92 @@ exports.notify = function(req, res) {
 };
 
 
-exports.createRecipient = function(req, res) {
+exports.createRecipient = function (req, res) {
 
     async.waterfall([
-            function(cb) {
-                var user = {
-                    status: "new"
-                };
-                new db.user(user)
-                    .save(function(err, user) {
-                        if (err) {
-                            return cb(err);
-                        } else {
-                            return cb(null, user);
-                        }
-                    });
-            },
-            function(user, cb) {
-                var model = req.body;
-                var profile = {
-                    user: user,
-                    status: "inComplete",
-                    name: model.name,
-                    gender: model.gender,
-                    picUrl: model.picUrl,
-                    picData: model.picData,
-                    diseases: model.diseaseIds,
-                    age: model.age,
-                    loops: {
-                        status: "active",
-                        role: "admin",
-                        profile: req.profile
+        function (cb) {
+            var user = {
+                status: "new"
+            };
+            new db.user(user)
+                .save(function (err, user) {
+                    if (err) {
+                        return cb(err);
+                    } else {
+                        return cb(null, user);
                     }
-                };
-                new db.profile(profile)
-                    .save(function(err, recipientProfile) {
-                        if (err) {
-                            return cb(err);
-                        } else {
-                            return cb(null, user, recipientProfile);
-                        }
-                    });
-            },
-            function(user, recipientProfile, cb) {
-                db.user.findOneAndUpdate({
-                    _id: user.id
-                }, {
+                });
+        },
+        function (user, cb) {
+            var model = req.body;
+            var profile = {
+                user: user,
+                status: "inComplete",
+                name: model.name,
+                gender: model.gender,
+                picUrl: model.picUrl,
+                picData: model.picData,
+                diseases: model.diseaseIds,
+                age: model.age,
+                loops: {
+                    status: "active",
+                    role: "admin",
+                    profile: req.profile
+                }
+            };
+            new db.profile(profile)
+                .save(function (err, recipientProfile) {
+                    if (err) {
+                        return cb(err);
+                    } else {
+                        return cb(null, user, recipientProfile);
+                    }
+                });
+        },
+        function (user, recipientProfile, cb) {
+            db.user.findOneAndUpdate({
+                _id: user.id
+            }, {
                     profile: recipientProfile
-                }, function(err) {
+                }, function (err) {
                     if (err) {
                         return cb(err);
                     } else {
                         return cb(null, recipientProfile);
                     }
                 });
-            },
-            function(recipientProfile, cb) {
-                db.profile.findOneAndUpdate({
-                        _id: req.profile
-                    }, {
-                        $addToSet: {
-                            recipients: recipientProfile
-                        }
-                    },
-                    function(err) {
-                        if (err) {
-                            return cb(err);
-                        } else {
-                            return cb(null, recipientProfile);
-                        }
-                    });
-            },
-            function(recipientProfile, cb) {
-                db.profile.findOne({
-                        _id: recipientProfile.id
-                    })
-                    .populate('diseases loops.profile')
-                    .exec(function(err, recipientProfile) {
-                        if (err) {
-                            return cb(err);
-                        } else {
-                            return cb(null, recipientProfile);
-                        }
-                    });
-            }
-        ],
-        function(err, recipientProfile) {
+        },
+        function (recipientProfile, cb) {
+            db.profile.findOneAndUpdate({
+                _id: req.profile
+            }, {
+                    $addToSet: {
+                        recipients: recipientProfile
+                    }
+                },
+                function (err) {
+                    if (err) {
+                        return cb(err);
+                    } else {
+                        return cb(null, recipientProfile);
+                    }
+                });
+        },
+        function (recipientProfile, cb) {
+            db.profile.findOne({
+                _id: recipientProfile.id
+            })
+                .populate('diseases loops.profile')
+                .exec(function (err, recipientProfile) {
+                    if (err) {
+                        return cb(err);
+                    } else {
+                        return cb(null, recipientProfile);
+                    }
+                });
+        }
+    ],
+        function (err, recipientProfile) {
             if (err) {
                 return res.failure();
             } else {
@@ -665,7 +665,7 @@ exports.createRecipient = function(req, res) {
 
 };
 
-exports.myRecipients = function(req, res) {
+exports.myRecipients = function (req, res) {
     var query = {};
     query._id = req.profile.id;
     var myRecipients = [];
@@ -673,11 +673,11 @@ exports.myRecipients = function(req, res) {
     myRecipients = req.profile.recipients;
 
     db.profile.find({
-            _id: {
-                $in: myRecipients
-            }
-        }).populate('diseases loops.profile')
-        .exec(function(err, myRecipientsProfile) {
+        _id: {
+            $in: myRecipients
+        }
+    }).populate('diseases loops.profile')
+        .exec(function (err, myRecipientsProfile) {
             if (err) {
                 return res.failure();
             } else {
@@ -686,7 +686,7 @@ exports.myRecipients = function(req, res) {
         });
 };
 
-exports.getRecipient = function(req, res) {
+exports.getRecipient = function (req, res) {
     var query = {};
     var myRecipients = [];
 
@@ -694,7 +694,7 @@ exports.getRecipient = function(req, res) {
     var isPresent;
     db.profile.findOne(query)
         .populate('diseases loops.profile')
-        .exec(function(err, recipientModel) {
+        .exec(function (err, recipientModel) {
             if (err) {
                 res.failure(err);
             }
@@ -702,116 +702,116 @@ exports.getRecipient = function(req, res) {
         });
 };
 
-exports.updateRecipient = function(req, res) {
+exports.updateRecipient = function (req, res) {
 
     var model = req.body;
     var query = {};
     query._id = req.params.id;
     async.waterfall([
-            function(cb) {
-                db.profile.findOne(query, function(err, recipientModel) {
-                    if (err) {
-                        return cb(err);
-                    } else {
-                        return cb(null, recipientModel);
-                    }
-                });
-            },
-            function(recipientModel, cb) {
-
-                recipientModel = entitiesHelper(recipientModel).set(model, ['name', 'age', 'gender', 'picUrl', 'picData', 'providers']);
-                recipientModel.diseases = model.diseaseIds;
-                return cb(null, recipientModel);
-            },
-            function(recipientModel, cb) {
-                if (model.loops) {
-                    async.eachSeries(model.loops, function(loopItem, next) {
-
-                        getProfile(loopItem.profileId, function(err, profileModel) {
-
-                            if (err) {
-                                return cb(err);
-                            } else {
-                                var recipients = profileModel.recipients;
-                                var profileRecipient = _.find(recipients, function(item) {
-                                    return item.toString() === recipientModel.id.toString();
-                                });
-                                var recipientProfile = _.find(recipientModel.loops, function(item) {
-                                    return item.profile.toString() === loopItem.profileId;
-                                });
-
-                                if (!recipientProfile && !profileRecipient) {
-
-                                    var recipientLoop = {
-                                        status: "inactive",
-                                        role: loopItem.role,
-                                        profile: loopItem.profileId
-                                    };
-                                    recipientModel.loops.push(recipientLoop);
-
-
-                                    var profileRequest = {
-                                        status: "invited",
-                                        role: loopItem.role,
-                                        recipient: recipientModel.id
-                                    };
-                                    profileModel.incommingRecipientRequests.push(profileRequest);
-
-                                    notify(profileModel, recipientModel, req.profile, true, "invited", function(err) {
-                                        if (err) {
-                                            return cb(err);
-                                        } else {
-                                            profileModel.save(function(err) {
-                                                if (err) {
-                                                    return cb(err);
-                                                }
-                                                next(null);
-                                            });
-                                        }
-                                    });
-                                } else {
-                                    next(null);
-                                }
-                            }
-                        });
-
-                    }, function(err) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        console.log(recipientModel);
-                        cb(err, recipientModel);
-                    });
+        function (cb) {
+            db.profile.findOne(query, function (err, recipientModel) {
+                if (err) {
+                    return cb(err);
                 } else {
                     return cb(null, recipientModel);
                 }
-            },
-            function(recipientModel, cb) {
-                recipientModel.save(function(err) {
+            });
+        },
+        function (recipientModel, cb) {
+
+            recipientModel = entitiesHelper(recipientModel).set(model, ['name', 'age', 'gender', 'picUrl', 'picData', 'providers']);
+            recipientModel.diseases = model.diseaseIds;
+            return cb(null, recipientModel);
+        },
+        function (recipientModel, cb) {
+            if (model.loops) {
+                async.eachSeries(model.loops, function (loopItem, next) {
+
+                    getProfile(loopItem.profileId, function (err, profileModel) {
+
+                        if (err) {
+                            return cb(err);
+                        } else {
+                            var recipients = profileModel.recipients;
+                            var profileRecipient = _.find(recipients, function (item) {
+                                return item.toString() === recipientModel.id.toString();
+                            });
+                            var recipientProfile = _.find(recipientModel.loops, function (item) {
+                                return item.profile.toString() === loopItem.profileId;
+                            });
+
+                            if (!recipientProfile && !profileRecipient) {
+
+                                var recipientLoop = {
+                                    status: "inactive",
+                                    role: loopItem.role,
+                                    profile: loopItem.profileId
+                                };
+                                recipientModel.loops.push(recipientLoop);
+
+
+                                var profileRequest = {
+                                    status: "invited",
+                                    role: loopItem.role,
+                                    recipient: recipientModel.id
+                                };
+                                profileModel.incommingRecipientRequests.push(profileRequest);
+
+                                notify(profileModel, recipientModel, req.profile, true, "invited", function (err) {
+                                    if (err) {
+                                        return cb(err);
+                                    } else {
+                                        profileModel.save(function (err) {
+                                            if (err) {
+                                                return cb(err);
+                                            }
+                                            next(null);
+                                        });
+                                    }
+                                });
+                            } else {
+                                next(null);
+                            }
+                        }
+                    });
+
+                }, function (err) {
                     if (err) {
                         return cb(err);
                     }
-                    return cb(null);
+                    console.log(recipientModel);
+                    cb(err, recipientModel);
                 });
-            },
-            function(cb) {
-                db.profile.findOne(query)
-                    .populate('diseases loops.profile')
-                    .exec(function(err, model) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        return cb(null, model);
-                    });
+            } else {
+                return cb(null, recipientModel);
             }
+        },
+        function (recipientModel, cb) {
+            recipientModel.save(function (err) {
+                if (err) {
+                    return cb(err);
+                }
+                return cb(null);
+            });
+        },
+        function (cb) {
+            db.profile.findOne(query)
+                .populate('diseases loops.profile')
+                .exec(function (err, model) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    return cb(null, model);
+                });
+        }
 
-        ],
-        function(err, model) {
+    ],
+        function (err, model) {
             if (err) {
                 return res.failure();
             }
             res.data(mapper.toModel(model));
-            var activeProfiles = _.filter(model.loops, function(item) {
+            var activeProfiles = _.filter(model.loops, function (item) {
                 if (item.status === "active" && item.profile.id !== req.profile.id) {
                     return item;
                 }
@@ -822,11 +822,11 @@ exports.updateRecipient = function(req, res) {
                 modelIncluded: false
             };
             var type = 'recipient';
-            async.each(activeProfiles, function(item, callback) {
+            async.each(activeProfiles, function (item, callback) {
                 var block = {
                     id: item.profile.id
                 };
-                notifyUpdation.updation(block, data, type, model.id, function(err) {
+                notifyUpdation.updation(block, data, type, model.id, function (err) {
                     if (err) {
                         return callback(err);
                     }
@@ -836,18 +836,18 @@ exports.updateRecipient = function(req, res) {
 
 };
 
-exports.independentRecipient = function(req, res) {
+exports.independentRecipient = function (req, res) {
     var model = req.body;
     var user;
     var query = {};
     query._id = req.params.id ? req.params.id : req.profile.id;
     async.waterfall([
-        function(cb) {
+        function (cb) {
             db.profile.findOneAndUpdate(query, {
-                    status: "active"
-                })
+                status: "active"
+            })
                 .populate('user diseases')
-                .exec(function(err, recipient) {
+                .exec(function (err, recipient) {
                     if (err) {
                         return cb(err);
                     }
@@ -855,8 +855,8 @@ exports.independentRecipient = function(req, res) {
                     cb(null, recipient);
                 });
         },
-        function(recipient, cb) {
-            chatClient.createUser(model.phone, function(err, chatUser) {
+        function (recipient, cb) {
+            chatClient.createUser(model.phone, function (err, chatUser) {
                 if (err) {
                     return cb(err);
                 } else {
@@ -868,20 +868,20 @@ exports.independentRecipient = function(req, res) {
                 }
             });
         },
-        function(recipient, cb) {
+        function (recipient, cb) {
             recipient.user.phone = model.phone;
             recipient.user.status = "active";
             if (model.device) {
                 recipient.user.device.id = model.device.id;
             }
-            recipient.user.save(function(err) {
+            recipient.user.save(function (err) {
                 if (err) {
                     return cb(err);
                 }
                 return cb(null, recipient);
             });
         }
-    ], function(err, recipient) {
+    ], function (err, recipient) {
         if (err) {
             return res.failure(err);
         }
@@ -889,117 +889,73 @@ exports.independentRecipient = function(req, res) {
     });
 };
 
-exports.acceptRecipientInvitation = function(req, res) {
+exports.acceptRecipientInvitation = function (req, res) {
 
     var myProfile = req.profile;
     var query = {};
     query._id = req.params.id;
 
     async.waterfall([
-            function(cb) {
+        function (cb) {
 
-                getProfile(req.params.id, cb);
-            },
-            function(sharedRecipient, cb) {
-                var recipientAdmin = _.find(sharedRecipient.loops, function(item) {
-                    return item.role === "admin";
-                });
-                getProfile(recipientAdmin.profile, function(err, recipientAdmin) {
-                    if (err) {
-                        return cb(err);
-                    }
-                    cb(null, sharedRecipient, recipientAdmin);
-                });
-            },
-            function(sharedRecipient, recipientAdmin, cb) {
-                async.eachSeries(myProfile.incommingRecipientRequests, function(item, next) {
-                        if (item.recipient.toString() === query._id) {
+            getProfile(req.params.id, cb);
+        },
+        function (sharedRecipient, cb) {
+            var recipientAdmin = _.find(sharedRecipient.loops, function (item) {
+                return item.role === "admin";
+            });
+            getProfile(recipientAdmin.profile, function (err, recipientAdmin) {
+                if (err) {
+                    return cb(err);
+                }
+                cb(null, sharedRecipient, recipientAdmin);
+            });
+        },
+        function (sharedRecipient, recipientAdmin, cb) {
+            async.eachSeries(myProfile.incommingRecipientRequests, function (item, next) {
+                if (item.recipient.toString() === query._id) {
 
-                            var index = myProfile.incommingRecipientRequests.indexOf(item);
-                            myProfile.incommingRecipientRequests.splice(index, 1);
-                            myProfile.recipients.push(query._id);
-                            myProfile.save(function(err, myprofile) {
-                                if (err) {
-                                    return cb(err);
-                                }
-                                notify(recipientAdmin, sharedRecipient, myprofile, true, "accept", function(err) {
-                                    if (err) {
-                                        return cb(err);
-                                    }
-                                    return cb(null, myprofile);
-                                });
-
-                            });
-                        } else {
-                            next(null);
-                        }
-                    },
-                    function(err, myprofile) {
+                    var index = myProfile.incommingRecipientRequests.indexOf(item);
+                    myProfile.incommingRecipientRequests.splice(index, 1);
+                    myProfile.recipients.push(query._id);
+                    myProfile.save(function (err, myprofile) {
                         if (err) {
                             return cb(err);
-                        } else {
-                            cb(null, myprofile);
                         }
-                    });
-            },
-            function(myprofile, cb) {
-                db.profile.findOne(query, function(err, recipientModel) {
-                    if (err) {
-                        return cb(err);
-                    } else {
-                        cb(null, myprofile, recipientModel);
-                    }
-                });
-            },
-            function(myprofile, recipientModel, cb) {
-                _.each(recipientModel.loops, function(item) {
-                    if (item.profile.toString() === req.profile.id) {
-                        item.status = "active";
-                        recipientModel.save(function(err) {
+                        notify(recipientAdmin, sharedRecipient, myprofile, true, "accept", function (err) {
                             if (err) {
                                 return cb(err);
                             }
-                            cb(null);
+                            return cb(null, myprofile);
                         });
+
+                    });
+                } else {
+                    next(null);
+                }
+            },
+                function (err, myprofile) {
+                    if (err) {
+                        return cb(err);
+                    } else {
+                        cb(null, myprofile);
                     }
                 });
-            },
-            function(cb) {
-                db.profile.findOne({
-                        _id: req.profile.id
-                    })
-                    .populate('recipients tags interests')
-                    .exec(function(err, myprofile) {
-                        if (err) {
-                            return cb(err);
-                        } else {
-                            cb(null, myprofile);
-                        }
-                    });
-            }
-        ],
-        function(err, myprofile) {
-            if (err) {
-                return res.failure(err);
-            } else {
-                res.data(mapper.toModel(myprofile));
-            }
-        });
-};
-
-exports.rejectRecipientInvitation = function(req, res) {
-
-    var myProfile = req.profile;
-    var query = {};
-    query._id = req.params.id;
-    async.waterfall([
-        function(cb) {
-
-            _.each(myProfile.incommingRecipientRequests, function(item) {
-                if (item._doc.recipient.toString() === query._id) {
-                    var index = myProfile.incommingRecipientRequests.indexOf(item);
-                    myProfile.incommingRecipientRequests.splice(index, 1);
-                    myProfile.save(function(err, myProfile) {
+        },
+        function (myprofile, cb) {
+            db.profile.findOne(query, function (err, recipientModel) {
+                if (err) {
+                    return cb(err);
+                } else {
+                    cb(null, myprofile, recipientModel);
+                }
+            });
+        },
+        function (myprofile, recipientModel, cb) {
+            _.each(recipientModel.loops, function (item) {
+                if (item.profile.toString() === req.profile.id) {
+                    item.status = "active";
+                    recipientModel.save(function (err) {
                         if (err) {
                             return cb(err);
                         }
@@ -1008,17 +964,61 @@ exports.rejectRecipientInvitation = function(req, res) {
                 }
             });
         },
-        function(cb) {
-            db.profile.findOne(query,
-                function(err, recipientProfile) {
+        function (cb) {
+            db.profile.findOne({
+                _id: req.profile.id
+            })
+                .populate('recipients tags interests')
+                .exec(function (err, myprofile) {
                     if (err) {
                         return cb(err);
                     } else {
-                        _.each(recipientProfile.loops, function(item) {
+                        cb(null, myprofile);
+                    }
+                });
+        }
+    ],
+        function (err, myprofile) {
+            if (err) {
+                return res.failure(err);
+            } else {
+                res.data(mapper.toModel(myprofile));
+            }
+        });
+};
+
+exports.rejectRecipientInvitation = function (req, res) {
+
+    var myProfile = req.profile;
+    var query = {};
+    query._id = req.params.id;
+    async.waterfall([
+        function (cb) {
+
+            _.each(myProfile.incommingRecipientRequests, function (item) {
+                if (item._doc.recipient.toString() === query._id) {
+                    var index = myProfile.incommingRecipientRequests.indexOf(item);
+                    myProfile.incommingRecipientRequests.splice(index, 1);
+                    myProfile.save(function (err, myProfile) {
+                        if (err) {
+                            return cb(err);
+                        }
+                        cb(null);
+                    });
+                }
+            });
+        },
+        function (cb) {
+            db.profile.findOne(query,
+                function (err, recipientProfile) {
+                    if (err) {
+                        return cb(err);
+                    } else {
+                        _.each(recipientProfile.loops, function (item) {
                             if (item._doc.profile.toString() === req.profile.id) {
                                 var index = recipientProfile.loops.indexOf(item);
                                 recipientProfile.loops.splice(index, 1);
-                                recipientProfile.save(function(err) {
+                                recipientProfile.save(function (err) {
                                     if (err) {
                                         return cb(err);
                                     }
@@ -1029,12 +1029,12 @@ exports.rejectRecipientInvitation = function(req, res) {
                     }
                 });
         },
-        function(cb) {
+        function (cb) {
             db.profile.findOne({
-                    _id: req.profile.id
-                })
+                _id: req.profile.id
+            })
                 .populate('recipients tags interests')
-                .exec(function(err, myprofile) {
+                .exec(function (err, myprofile) {
                     if (err) {
                         return cb(err);
                     } else {
@@ -1042,7 +1042,7 @@ exports.rejectRecipientInvitation = function(req, res) {
                     }
                 });
         }
-    ], function(err, myProfile) {
+    ], function (err, myProfile) {
         if (err) {
             return res.failure(err);
         }
@@ -1050,60 +1050,60 @@ exports.rejectRecipientInvitation = function(req, res) {
     });
 
 };
-exports.acceptRequest = function(req, res) { //not using
+exports.acceptRequest = function (req, res) { //not using
     var model = req.body;
     var profile = req.profile;
     if (!profile.employeeNo) {
         return res.failure('Access Denied');
     }
 
-    async.waterfall([function(cb) {
-            db.profile.findOne({
-                rollNo: model.rollNo
-            }).exec(function(err, identity) {
-                if (identity) {
-                    return res.failure('Roll No Already Exits');
+    async.waterfall([function (cb) {
+        db.profile.findOne({
+            rollNo: model.rollNo
+        }).exec(function (err, identity) {
+            if (identity) {
+                return res.failure('Roll No Already Exits');
+            }
+            cb(null);
+        });
+    },
+    function (cb) {
+        db.profile.findOne({
+            _id: model.id
+        }).populate('defaultCommunity')
+            .exec(function (err, profile) {
+                if (err) {
+                    return cb(err);
                 }
-                cb(null);
+                cb(null, profile);
             });
-        },
-        function(cb) {
-            db.profile.findOne({
-                    _id: model.id
-                }).populate('defaultCommunity')
-                .exec(function(err, profile) {
-                    if (err) {
-                        return cb(err);
-                    }
-                    cb(null, profile);
-                });
-        },
-        function(profile, cb) {
-            db.community.update({
-                    _id: profile.defaultCommunity,
-                    "members.profile": model.id
-                }, {
-                    $set: {
+    },
+    function (profile, cb) {
+        db.community.update({
+            _id: profile.defaultCommunity,
+            "members.profile": model.id
+        }, {
+                $set: {
 
-                        "members.$.status": 'active'
-                    }
-                },
-                function(err, community) {
-                    if (err) {
-                        return cb(err);
-                    }
-                    cb(null, profile);
-                });
-        },
+                    "members.$.status": 'active'
+                }
+            },
+            function (err, community) {
+                if (err) {
+                    return cb(err);
+                }
+                cb(null, profile);
+            });
+    },
 
-        function(profile, cb) {
-            profile.isWaiting = false;
-            profile.rollNo = model.rollNo;
-            profile.save();
-            cb(null, profile);
+    function (profile, cb) {
+        profile.isWaiting = false;
+        profile.rollNo = model.rollNo;
+        profile.save();
+        cb(null, profile);
 
-        }
-    ], function(err, profile) {
+    }
+    ], function (err, profile) {
         if (err) {
             return res.failure(err);
         }
@@ -1117,7 +1117,7 @@ exports.acceptRequest = function(req, res) { //not using
 
             message: req.body.message,
             subject: req.body.subject
-        }, function(err) {
+        }, function (err) {
             if (err) {
                 return res.failure(err);
             }
@@ -1126,34 +1126,34 @@ exports.acceptRequest = function(req, res) { //not using
         // res.data(mapper.toModel(user));
     });
 };
-exports.rejectRequest = function(req, res) { //not using
+exports.rejectRequest = function (req, res) { //not using
     var model = req.body;
     var profile = req.profile;
     if (!profile.employeeNo) {
         return res.failure('Access Denied');
     }
     async.waterfall([
-        function(cb) {
+        function (cb) {
             db.profile.findOne({
-                    _id: model.id
-                }).populate('defaultCommunity')
-                .exec(function(err, user) {
+                _id: model.id
+            }).populate('defaultCommunity')
+                .exec(function (err, user) {
                     if (err) {
                         return cb(err);
                     }
                     cb(null, user);
                 });
         },
-        function(user, cb) {
+        function (user, cb) {
             db.community.update({
-                    _id: user.defaultCommunity.id,
-                    "members.profile": model.id
-                }, {
+                _id: user.defaultCommunity.id,
+                "members.profile": model.id
+            }, {
                     $set: {
                         "members.$.status": 'waiting'
                     }
                 },
-                function(err, community) {
+                function (err, community) {
                     if (err) {
                         return cb(err);
                     }
@@ -1161,13 +1161,13 @@ exports.rejectRequest = function(req, res) { //not using
                 });
         },
 
-        function(user, cb) {
+        function (user, cb) {
             user.isWaiting = true;
             user.rollNo = model.rollNo;
             user.save();
             cb(null, user);
         }
-    ], function(err, user) {
+    ], function (err, user) {
         if (err) {
             return res.failure(err);
         }
@@ -1180,7 +1180,7 @@ exports.rejectRequest = function(req, res) { //not using
             action: 'rejectRequest',
             message: req.body.message,
             subject: req.body.subject
-        }, function(err) {
+        }, function (err) {
             if (err) {
                 return res.failure(err);
             }
@@ -1189,35 +1189,35 @@ exports.rejectRequest = function(req, res) { //not using
         // res.data(mapper.toModel(user));
     });
 };
-exports.setMonitor = function(req, res) { //not using...
+exports.setMonitor = function (req, res) { //not using...
     var model = req.body;
     var profile = req.profile;
     if (!profile.employeeNo) {
         return res.failure('Access Denied');
     }
     async.waterfall([
-        function(cb) {
+        function (cb) {
             db.profile.findOne({
-                    _id: model.id
-                }).populate('defaultCommunity')
-                .exec(function(err, user) {
+                _id: model.id
+            }).populate('defaultCommunity')
+                .exec(function (err, user) {
                     if (err) {
                         return cb(err);
                     }
                     cb(null, user);
                 });
         },
-        function(user, cb) {
+        function (user, cb) {
             db.community.update({
-                    _id: user.defaultCommunity.id,
-                    "members.profile": model.id
-                }, {
+                _id: user.defaultCommunity.id,
+                "members.profile": model.id
+            }, {
                     $set: {
                         "members.$.status": 'active',
                         "members.$.isModerator": 'true'
                     }
                 },
-                function(err, community) {
+                function (err, community) {
                     if (err) {
                         return cb(err);
                     }
@@ -1225,13 +1225,13 @@ exports.setMonitor = function(req, res) { //not using...
                 });
         },
 
-        function(user, cb) {
+        function (user, cb) {
             user.isWaiting = true;
             user.rollNo = model.rollNo;
             user.save();
             cb(null, user);
         }
-    ], function(err, user) {
+    ], function (err, user) {
         if (err) {
             return res.failure(err);
         }
@@ -1244,7 +1244,7 @@ exports.setMonitor = function(req, res) { //not using...
             action: 'setMonitor',
             message: req.body.message,
             subject: req.body.subject
-        }, function(err) {
+        }, function (err) {
             if (err) {
                 return res.failure(err);
             }
@@ -1254,34 +1254,34 @@ exports.setMonitor = function(req, res) { //not using...
     });
 };
 
-exports.againRequest = function(req, res) { //for again request to come in waiting
+exports.againRequest = function (req, res) { //for again request to come in waiting
 
     var profile = req.profile,
         communityId = req.params.communityId === "defaultCommunity" ? req.profile.defaultCommunity : req.params.communityId;
 
     async.parallel([
-            function(cb) {
-                profile.status = 'waiting';
-                profile.save(cb);
-            },
-            function(cb) {
-                dbQuery.updateCommunity({
-                    profileId: profile.id,
-                    communityId: communityId,
-                    set: {
-                        $set: {
-                            'members.$.status': 'waiting'
-                        }
+        function (cb) {
+            profile.status = 'waiting';
+            profile.save(cb);
+        },
+        function (cb) {
+            dbQuery.updateCommunity({
+                profileId: profile.id,
+                communityId: communityId,
+                set: {
+                    $set: {
+                        'members.$.status': 'waiting'
                     }
-                }, function(err) {
-                    if (err) {
-                        return cb(err);
-                    }
-                    cb(null);
-                });
-            }
-        ],
-        function(err) {
+                }
+            }, function (err) {
+                if (err) {
+                    return cb(err);
+                }
+                cb(null);
+            });
+        }
+    ],
+        function (err) {
             if (err) {
                 return res.failure(err);
             }

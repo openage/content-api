@@ -1,9 +1,8 @@
 'use strict';
 var async = require('async');
-var validator = require('validator');
 var mailgun = require('mailgun-js');
 var mailProvider = require('config').get('mailer');
-var logger = require('../helpers/logger')('api.messages');
+var logger = require('@open-age/logger')('api.messages');
 var template = require('../helpers/template');
 var db = require('mongoose').models;
 

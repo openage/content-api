@@ -5,7 +5,7 @@ var db = require('mongoose').models;
 
 var pushConfig = require('config').get('push');
 var pushClient = require('../providers/' + pushConfig.provider);
-var logger = require('../helpers/logger')('services.notification');
+var logger = require('@open-age/logger')('services.notification');
 
 
 var getSubject = function (toProfile, data) {
@@ -205,7 +205,7 @@ var getMessage = function (toProfile, data) {
     }
 
     if (data.entity.type === 'activity' && data.api === 'admin') {
-        switch (data.action) {            
+        switch (data.action) {
             case 'creation':
                 {
                     return data.entity.data.subject;
@@ -214,7 +214,7 @@ var getMessage = function (toProfile, data) {
                 {
                     return 'Updation : ' + data.entity.data.subject;
                 }
-        }        
+        }
     }
 
     if (data.entity.type === 'activity' && data.api === 'comments') {

@@ -5,7 +5,7 @@ var auth = require('../middleware/authorization');
 var mappers = require('../mappers');
 var entitiesHelper = require('../helpers/entities');
 
-var logger = require('../helpers/logger')('api.users');
+var logger = require('@open-age/logger')('api.users');
 
 var chatConfig = require('config').get('chat');
 var chatClient = require('../providers/' + chatConfig.provider);
@@ -44,21 +44,21 @@ var getDefaultCommunity = function (communityId, profile, callback) {
             school: query.school,
             subject: 'Staff Room'
         }, {
-            isDefault: true,
-            isPublic: false,
-            school: query.school,
-            subject: 'Staff Room'
-        }, function (err, community, isCreated) {
-            community.members.push({
-                profile: profile.id,
-                status: 'waiting',
-                deactivated: false,
-                muted: false,
-                isModerator: false
+                isDefault: true,
+                isPublic: false,
+                school: query.school,
+                subject: 'Staff Room'
+            }, function (err, community, isCreated) {
+                community.members.push({
+                    profile: profile.id,
+                    status: 'waiting',
+                    deactivated: false,
+                    muted: false,
+                    isModerator: false
+                });
+                profile.defaultCommunity = community;
+                callback(null, profile);
             });
-            profile.defaultCommunity = community;
-            callback(null, profile);
-        });
     } else {
         db.community.findOneAndUpdate(query, {
             $addToSet: {
@@ -132,7 +132,7 @@ var getDefaultCommunity = function (communityId, profile, callback) {
 var createUser = function (data, school, callback) {
     async.waterfall([
         function (cb) {
-            chatClient.createUser({id: data.phone || data.facebookId, name: data.name}, cb);
+            chatClient.createUser({ id: data.phone || data.facebookId, name: data.name }, cb);
         },
         function (chatUser, cb) {
             var user = {
@@ -316,25 +316,25 @@ exports.signIn = function (req, res) {
     var model = req.body;
     var query = {};
     var schoolCode = req.headers['school-code'];
-        if(model.username){
-            query.phone = model.username;
-        }
-        if (model.phone) {
-            query.phone = model.phone;
-        }
-        if (model.facebookId) {
-            query.facebookId = model.facebookId;
-        }
-        query.password = model.password;
-        //TO DO set for tunneling password
-        db.user.findOne(query)
-            .populate({
-                path: 'profile',
-                populate: {
-                    path: 'defaultCommunity',
-                    select: 'body'
-                }
-            }).exec(function (err, user) {
+    if (model.username) {
+        query.phone = model.username;
+    }
+    if (model.phone) {
+        query.phone = model.phone;
+    }
+    if (model.facebookId) {
+        query.facebookId = model.facebookId;
+    }
+    query.password = model.password;
+    //TO DO set for tunneling password
+    db.user.findOne(query)
+        .populate({
+            path: 'profile',
+            populate: {
+                path: 'defaultCommunity',
+                select: 'body'
+            }
+        }).exec(function (err, user) {
             if (err) {
                 return res.failure(err);
             }
@@ -344,8 +344,8 @@ exports.signIn = function (req, res) {
             if (user.profile.school.code !== schoolCode) {
                 return res.failure("Invalid college");
             }
-            if(model.type === 'admin'){
-                if(user.profile.type !== 'admin'){
+            if (model.type === 'admin') {
+                if (user.profile.type !== 'admin') {
                     return res.failure('profile type is not admin');
                 }
             }
@@ -382,7 +382,7 @@ exports.create = function (req, res) {
 };
 
 exports.get = function (req, res) {
-    db.user.findOne({_id: req.params.id}, function (err, user) {
+    db.user.findOne({ _id: req.params.id }, function (err, user) {
         if (err) {
             return res.failure(err);
         }
@@ -396,7 +396,7 @@ exports.get = function (req, res) {
 exports.delete = function (req, res) {
     async.waterfall([
         function (cb) {
-            db.user.findOne({_id: req.params.id}, cb);
+            db.user.findOne({ _id: req.params.id }, cb);
         },
         function (user, cb) {
             chatClient.deleteUser(user.jabber.id, cb);
@@ -415,29 +415,29 @@ exports.delete = function (req, res) {
 exports.update = function (req, res) {
     var data = req.body;
     async.waterfall([function (cb) {
-        db.user.findOne({_id: req.params.id}).exec(function (err, result) {
+        db.user.findOne({ _id: req.params.id }).exec(function (err, result) {
             if (err) {
                 return cb(err);
             }
             cb(null, result);
         });
     },
-        function (user, cb) {
-            user = entitiesHelper(user).set(data, [
-                'phone',
-                'facebookId',
-                'status',
-                'device',
-                'chat',
-                'password'
-            ]);
-            user.save(function (err, user) {
-                if (err) {
-                    return cb(err);
-                }
-                cb(null, user);
-            });
-        }
+    function (user, cb) {
+        user = entitiesHelper(user).set(data, [
+            'phone',
+            'facebookId',
+            'status',
+            'device',
+            'chat',
+            'password'
+        ]);
+        user.save(function (err, user) {
+            if (err) {
+                return cb(err);
+            }
+            cb(null, user);
+        });
+    }
     ], function (err, user) {
         if (err) {
             return res(err);
@@ -451,28 +451,28 @@ exports.validatePin = function (req, res) {
     var pin = req.body.pin;
     var schoolCode = req.school.code;
     async.waterfall([
-            function (cb) {
-                db.school.findOne({
-                    code: schoolCode
-                }, function (err, school) {
-                    if (err) {
-                        return cb(err);
+        function (cb) {
+            db.school.findOne({
+                code: schoolCode
+            }, function (err, school) {
+                if (err) {
+                    return cb(err);
+                }
+                if (!school) {
+                    return cb('school not present');
+                }
+                cb(null, school);
+            });
+        },
+        function (school, cb) {
+            db.user.findById(req.params.id)
+                .populate({
+                    path: 'profile',
+                    populate: {
+                        path: 'defaultCommunity',
+                        select: 'body'
                     }
-                    if (!school) {
-                        return cb('school not present');
-                    }
-                    cb(null, school);
-                });
-            },
-            function (school, cb) {
-                db.user.findById(req.params.id)
-                    .populate({
-                        path: 'profile',
-                        populate: {
-                            path: 'defaultCommunity',
-                            select: 'body'
-                        }
-                    }).exec(function (err, user) {
+                }).exec(function (err, user) {
                     if (err) {
                         return cb(err);
                     }
@@ -485,55 +485,55 @@ exports.validatePin = function (req, res) {
                     user.school = school;
                     cb(err, user);
                 });
-            },
-            function (user, cb) {
-                if (user.pin === pin || pin === '9191') { //todo: use next line
-                    // if (user.pin === pin || (user.pin && pin === '9191')) { //hack: to bypass the pin
-                    return cb(null, user);
-                }
-                res.log.info('invalid pin');
-                return cb('invalid pin');
-            },
-            function (user, cb) {
-                async.parallel({
-                    user: function (cb) {
-                        res.log.info('user activated');
-                        user.status = 'active';
-                        user.pin = null;
-                        user.token = auth.getToken(user);
-                        user.save(function (err, updatedUser) {
-                            res.log.debug('user saved');
-                            if (err) {
-                                return cb(err);
-                            }
-                            cb(null, updatedUser);
-                        });
-                    },
-                    profile: function (cb) {
-                        if (user.profile.status === 'inComplete') {
-                            user.profile.status = 'waiting';
-                            // if (user.profile.type === 'admin') {
-
-                            //     user.profile.status = 'admin'; //active will be discoverable
-                            // }
-                            user.profile.save(cb(null));
-                        } else {
-                            if (user.profile.type === 'student') {
-                                user.profile.course = user.profile.defaultCommunity.body;
-                            }
-                            user.profile.defaultCommunity = user.profile.defaultCommunity.id;
-                            cb(null);
-                        }
-
-                    }
-                }, function (err, models) {
-                    if (err) {
-                        return cb(err);
-                    }
-                    cb(null, models.user);
-                });
+        },
+        function (user, cb) {
+            if (user.pin === pin || pin === '9191') { //todo: use next line
+                // if (user.pin === pin || (user.pin && pin === '9191')) { //hack: to bypass the pin
+                return cb(null, user);
             }
-        ],
+            res.log.info('invalid pin');
+            return cb('invalid pin');
+        },
+        function (user, cb) {
+            async.parallel({
+                user: function (cb) {
+                    res.log.info('user activated');
+                    user.status = 'active';
+                    user.pin = null;
+                    user.token = auth.getToken(user);
+                    user.save(function (err, updatedUser) {
+                        res.log.debug('user saved');
+                        if (err) {
+                            return cb(err);
+                        }
+                        cb(null, updatedUser);
+                    });
+                },
+                profile: function (cb) {
+                    if (user.profile.status === 'inComplete') {
+                        user.profile.status = 'waiting';
+                        // if (user.profile.type === 'admin') {
+
+                        //     user.profile.status = 'admin'; //active will be discoverable
+                        // }
+                        user.profile.save(cb(null));
+                    } else {
+                        if (user.profile.type === 'student') {
+                            user.profile.course = user.profile.defaultCommunity.body;
+                        }
+                        user.profile.defaultCommunity = user.profile.defaultCommunity.id;
+                        cb(null);
+                    }
+
+                }
+            }, function (err, models) {
+                if (err) {
+                    return cb(err);
+                }
+                cb(null, models.user);
+            });
+        }
+    ],
         function (err, user) {
             if (err) {
                 return res.failure(err);
@@ -670,15 +670,15 @@ exports.deviceManger = function (req, res) {
                     id: deviceId
                 }
             }, {
-                device: {
-                    id: null
-                }
-            }, function (err) {
-                if (err) {
-                    return cb(err);
-                }
-                return cb(null);
-            });
+                    device: {
+                        id: null
+                    }
+                }, function (err) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    return cb(null);
+                });
         },
         function (cb) {
             db.user.findById(req.params.userId)
@@ -696,11 +696,11 @@ exports.deviceManger = function (req, res) {
                     });
                 });
         }], function (err) {
-        if (err) {
-            return res.failure(err);
-        }
-        return res.success();
-    })
+            if (err) {
+                return res.failure(err);
+            }
+            return res.success();
+        })
 
 }
 

@@ -8,15 +8,17 @@ var mapper = exports;
 
 mapper.toModel = function (data) {
     var community = {
-        isPublic : data.isPublic,
+        isPublic: data.isPublic,
         isDefault: data.isDefault,
     }
     var model = {
         id: data.id,
         subject: data.subject,
         body: data.body,
-        picUrl: data.picUrl,
-        picData: data.picData,
+        pic: {
+            url: data.picUrl,
+            thumbnail: data.picData
+        },
         icon: data.icon,
         status: data.status,
         priority: data.priority,
@@ -27,12 +29,11 @@ mapper.toModel = function (data) {
         isDefault: data.isDefault,
         isArchive: data.isArchive || false,
         isFollowable: data.isFollowable,
-        course: data.course,
         feedUrl: data.feedUrl
         // membersCount: data.members.length || 0
     };
 
-    model.updated_At = data.updated_At;
+    model.timeStamp = data.updated_At;
     model.created_At = data.created_At;
 
 
@@ -167,7 +168,7 @@ mapper.toModel = function (data) {
     if (data.followers.length > 0) {
         _(data.followers).each(function (item) {
             _(item.activities).each(function (element) {
-                var community ={
+                var community = {
                     isPublic: element.isPublic,
                     isDefault: element.isDefault
                 }
@@ -585,9 +586,9 @@ mapper.toShortModel = function (entities) {
         if (entity.followers.length > 0) {
             _(entity.followers).each(function (item) {
                 _(item.activities).each(function (element) {
-                    var community ={
-                        isPublic : element.isPublic,
-                        isDefault : element.isDefault
+                    var community = {
+                        isPublic: element.isPublic,
+                        isDefault: element.isDefault
                     }
                     if (element.dueDate) {
                         var differece = moment().diff(element.dueDate, 'minutes');

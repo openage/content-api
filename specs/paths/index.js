@@ -6,7 +6,7 @@ const definitions = require('../definitions')
 const paths = {}
 
 const setHeaders = (param) => {
-    if (!param.name.startsWith('x-')) {
+    if (!param.name || !param.name.startsWith('x-')) {
         return param
     }
 
@@ -16,18 +16,21 @@ const setHeaders = (param) => {
     param.in = param.in || 'header'
 
     switch (param.name) {
-    case 'x-role-key':
-        param.description = param.description || 'user role key'
-        break
-    case 'x-tenant-code':
-        param.description = param.description || 'the application code'
-        break
-    case 'x-organization':
-        param.description = param.description || 'the organization code'
-        break
-    case 'x-client-code':
-        param.description = param.description || 'the client code'
-        break
+        case 'x-role-key':
+            param.description = param.description || 'user role key'
+            break
+        case 'x-tenant-code':
+            param.description = param.description || 'the application code'
+            break
+        case 'x-organization':
+            param.description = param.description || 'the organization code'
+            break
+        case 'x-client-code':
+            param.description = param.description || 'the client code'
+            break
+        case 'x-access-token':
+            param.description = param.description || 'token'
+            break
     }
 
     return param
@@ -86,60 +89,60 @@ const setActionDefaults = (action, options) => {
     let addCode = false
 
     switch (options.type) {
-    case 'post':
-        if (options.url === '.csv') {
-            summary = 'import'
-            description = `imports all the items in the posted CSV file`
-            operationId = `${options.name}-import`
-        } else if (options.url === '/') {
-            summary = `create`
-            description = `creates new item in ${options.name}`
-            operationId = `${options.name}-create`
-            addBody = true
-        }
-        break
-    case 'put':
-        if (options.url === '/{id}') {
-            summary = `update`
-            description = `updates an item in ${options.name}`
-            operationId = `${options.name}-update`
+        case 'post':
+            if (options.url === '.csv') {
+                summary = 'import'
+                description = `imports all the items in the posted CSV file`
+                operationId = `${options.name}-import`
+            } else if (options.url === '/') {
+                summary = `create`
+                description = `creates new item in ${options.name}`
+                operationId = `${options.name}-create`
+                addBody = true
+            }
+            break
+        case 'put':
+            if (options.url === '/{id}') {
+                summary = `update`
+                description = `updates an item in ${options.name}`
+                operationId = `${options.name}-update`
+                addBody = true
+                addId = true
+            }
+            break
+        case 'delete':
+            summary = `remove`
+            description = `removes an item in ${options.name}`
+            operationId = 'delete'
             addBody = true
             addId = true
-        }
-        break
-    case 'delete':
-        summary = `remove`
-        description = `removes an item in ${options.name}`
-        operationId = 'delete'
-        addBody = true
-        addId = true
-        break
-    case 'get':
-        if (!options.url || options.url === '' || options.url === '/') {
-            summary = `search`
-            description = `searches in ${options.name}`
-            operationId = `${options.name}-search`
-            defaultResponse.schema.$ref = `#/definitions/${options.name}PageRes`
-        } else if (options.url === '.csv') {
-            summary = `export`
-            description = `exports all the items as ${options.name}.csv`
-            operationId = `${options.name}-export`
-        } else if (options.url === '/{id}') {
-            summary = `get`
-            description = `gets an item by id in ${options.name}`
-            operationId = `${options.name}-get-by-id`
-            addId = true
-        } else if (options.url === '/{code}') {
-            summary = `get`
-            description = `gets an item by code in ${options.name}`
-            operationId = `${options.name}-get-by-code`
-            addCode = true
-        } else {
-            summary = `get`
-            description = `gets an item in ${options.name}`
-            operationId = `${options.name}-get`
-        }
-        break
+            break
+        case 'get':
+            if (!options.url || options.url === '' || options.url === '/') {
+                summary = `search`
+                description = `searches in ${options.name}`
+                operationId = `${options.name}-search`
+                defaultResponse.schema.$ref = `#/definitions/${options.name}PageRes`
+            } else if (options.url === '.csv') {
+                summary = `export`
+                description = `exports all the items as ${options.name}.csv`
+                operationId = `${options.name}-export`
+            } else if (options.url === '/{id}') {
+                summary = `get`
+                description = `gets an item by id in ${options.name}`
+                operationId = `${options.name}-get-by-id`
+                addId = true
+            } else if (options.url === '/{code}') {
+                summary = `get`
+                description = `gets an item by code in ${options.name}`
+                operationId = `${options.name}-get-by-code`
+                addCode = true
+            } else {
+                summary = `get`
+                description = `gets an item in ${options.name}`
+                operationId = `${options.name}-get`
+            }
+            break
     }
     action.summary = action.summary || summary
     action.description = action.description || description
@@ -203,24 +206,24 @@ const setActionDefaults = (action, options) => {
             }
 
             switch (options.type) {
-            case 'get':
-                param.in = param.in || 'path'
-                if (param.required === undefined) {
-                    param.required = true
-                }
-                break
-            case 'post':
-                param.in = param.in || 'body'
-                if ('body|model'.indexOf(param.name) !== -1) {
-                    param = setBody(param, options, 'create')
-                }
-                break
-            case 'put':
-                param.in = param.in || 'body'
-                if ('body|model'.indexOf(param.name) !== -1) {
-                    param = setBody(param, options, 'update')
-                }
-                break
+                case 'get':
+                    param.in = param.in || 'path'
+                    if (param.required === undefined) {
+                        param.required = true
+                    }
+                    break
+                case 'post':
+                    param.in = param.in || 'body'
+                    if ('body|model'.indexOf(param.name) !== -1) {
+                        param = setBody(param, options, 'create')
+                    }
+                    break
+                case 'put':
+                    param.in = param.in || 'body'
+                    if ('body|model'.indexOf(param.name) !== -1) {
+                        param = setBody(param, options, 'update')
+                    }
+                    break
             }
 
             param.type = param.type || 'string'

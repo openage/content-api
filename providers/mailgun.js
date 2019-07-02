@@ -2,15 +2,15 @@
 var nodemailer = require('nodemailer');
 var mailgunTransport = require('nodemailer-mailgun-transport');
 var emailConfig = require('config').get('email');
-var logger = require('../helpers/logger')('mailgun');
+var logger = require('@open-age/logger')('mailgun');
 var async = require('async');
 var validator = require('validator');
 
-var queue = async.queue(function(params, callback) {
+var queue = async.queue(function (params, callback) {
     var log = logger.start('queueTask');
     log.debug('sending', params.payload);
 
-    params.transporter.sendMail(params.payload, function(err) {
+    params.transporter.sendMail(params.payload, function (err) {
         if (err) {
             log.error('error while sending email', {
                 payload: params.payload,
@@ -23,7 +23,7 @@ var queue = async.queue(function(params, callback) {
     });
 }, 1);
 
-var send = function(to, email, transporter, config, cb) {
+var send = function (to, email, transporter, config, cb) {
     var log = logger.start('send');
     if (!to) {
         log.info('no email configured', email);
@@ -59,7 +59,7 @@ var send = function(to, email, transporter, config, cb) {
     }
 };
 
-var getTransport = function(config) {
+var getTransport = function (config) {
     return nodemailer.createTransport(mailgunTransport({
         service: 'Mailgun',
         auth: config.auth
@@ -71,16 +71,16 @@ var configuredTrasport = getTransport(emailConfig);
 
 var mailer = module.exports;
 
-mailer.config = function(config) {
+mailer.config = function (config) {
     var transport = getTransport(config || emailConfig);
 
     return {
-        send: function(to, email, cb) {
+        send: function (to, email, cb) {
             send(to, email, transport, config || emailConfig, cb);
         }
     };
 };
 
-mailer.send = function(to, email, cb) {
+mailer.send = function (to, email, cb) {
     send(to, email, configuredTrasport, emailConfig, cb);
 };

@@ -1,21 +1,21 @@
 'use strict';
 var smsConfig = require('config').get('smsRoute');
 var Client = require('node-rest-client').Client;
-var logger = require('../helpers/logger')('sms');
+var logger = require('@open-age/logger')('sms');
 
-exports.sendMessage = function(mobileNumber, pin, callback) {
+exports.sendMessage = function (mobileNumber, pin, callback) {
     var log = logger.start('send');
     log.info({
         pin: pin,
         mobileNumber: mobileNumber
     });
     var msg;
-    switch(pin){
-        case 0:  msg = 'Your School data sync failed, Please Try Again';
-        break;
+    switch (pin) {
+        case 0: msg = 'Your School data sync failed, Please Try Again';
+            break;
         case 1: msg = 'Your school data is Synced Successfully';
-        break;
-        default:  msg = 'Your Aqua Pin Is  ' + pin + ' ';
+            break;
+        default: msg = 'Your Aqua Pin Is  ' + pin + ' ';
     }
 
 
@@ -24,7 +24,7 @@ exports.sendMessage = function(mobileNumber, pin, callback) {
         "&password=" + smsConfig.password + "&type=" + smsConfig.type + "&dlr=" + smsConfig.dlr +
         "&destination=" + mobileNumber + "&source=" + smsConfig.source +
         "&message=" + msg + "",
-        function(data) {
+        function (data) {
             log.debug(data);
             if (callback) {
                 callback(null, data);

@@ -26,7 +26,7 @@
         "@open-age/offline-processor": "^1.4.11",
         "app-root-path": "^2.0.1",
         "async": "^2.6.0",
-        "bcrypt": "^3.0.2",
+        "bcrypt": "^5.0.0",
         "bcrypt-nodejs": "0.0.3",
         "bluebird": "^3.5.1",
         "body-parser": "^1.18.2",
